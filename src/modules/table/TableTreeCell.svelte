@@ -18,6 +18,7 @@
 
 <div class="sg-cell-inner" style="padding-left: {row.childLevel*3}em">
     {#if row.children}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
         <div class="sg-tree-expander" on:click="{onExpandToggle}">
             {#if row.expanded}
             <i class="fas fa-angle-down"></i>
