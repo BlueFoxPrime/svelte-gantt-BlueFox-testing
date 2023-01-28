@@ -90,8 +90,8 @@
                 draggable.onmouseup(event);
             }
     
-            taskStore.deleteAll(oldReflections);
-            taskStore.upsertAll(newTasksAndReflections);
+            if (oldReflections.length) taskStore.deleteAll(oldReflections);
+            if (newTasksAndReflections.length) taskStore.upsertAll(newTasksAndReflections);
             console.log('%cTASK SVELTE UPDATE', 'background:black; color:white;')
     
             newTasksAndReflections.length = 0;
@@ -286,10 +286,10 @@
         }
     
         function taskElement(node, model) {
-            if(node && node.getBoundingClientRect().x == 0 && node.getBoundingClientRect().width == 0){
-                node = <HTMLElement> document.querySelector('[data-task-id="'+node.dataset.taskId+'"]')
-                console.log('NODE AFTER', node, node.getBoundingClientRect())
-            }
+            // if(node && node.getBoundingClientRect().x == 0 && node.getBoundingClientRect().width == 0){
+            //     node = <HTMLElement> document.querySelector('[data-task-id="'+node.dataset.taskId+'"]')
+            //     console.log('NODE AFTER', node, node.getBoundingClientRect())
+            // }
 
             if(taskElementHook) {
                 return taskElementHook(node, model);
