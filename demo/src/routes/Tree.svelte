@@ -145,7 +145,11 @@
             "to": time("15:30"),
             "classes": "orange"
         }],
-        dependencies: []
+        dependencies: [{
+            id: 1,
+            fromId: 1,
+            toId: 2
+        }]
     }
 
     let options = {

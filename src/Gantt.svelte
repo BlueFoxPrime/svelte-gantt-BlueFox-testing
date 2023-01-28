@@ -9,7 +9,7 @@
     let scrollables = [];
     let mounted = false;
 
-    import { rowStore, taskStore, timeRangeStore, allTasks, allRows, allTimeRanges, rowTaskCache } from './core/store';
+    import { rowStore, taskStore, timeRangeStore, allRows, rowTaskCache, allTimeRanges } from './core/store'; //allTasks,
     import { Task, SelectionManager, Row, TimeRange, TimeRangeHeader } from './entities';
     import { Columns, ColumnHeader } from './column';
     import { Resizer } from './ui';
@@ -19,6 +19,7 @@
     import { GanttApi } from './core/api';
     import { TaskFactory, reflectTask } from './core/task';
     import type { SvelteTask } from './core/task';
+    import type { SvelteRow } from './core/row';
     import { RowFactory } from './core/row';
     import { TimeRangeFactory } from './core/timeRange';
     import { DragDropManager } from './core/drag';
@@ -496,13 +497,14 @@
     }
 
     export function refreshTasks() {
-        $allTasks.forEach(task => {
+        for(let id of Object.keys($taskStore.entities)) {
+            let task = $taskStore.entities[id];
             const newLeft = columnService.getPositionByDate(task.model.from) | 0;
             const newRight = columnService.getPositionByDate(task.model.to) | 0;
 
             task.left = newLeft;
             task.width = newRight - newLeft;
-        });
+        }
         taskStore.refresh();
     }
 
@@ -613,7 +615,7 @@
     }
 
     let filteredRows = [];
-    $: filteredRows = $allRows.filter(row => !row.hidden);
+    $: filteredRows = $allRows.filter(row => !row.hidden); 
 
     let rowContainerHeight;
     $: rowContainerHeight = filteredRows.length * rowHeight;
@@ -635,19 +637,19 @@
 
     let visibleTasks: SvelteTask[];
     $: {
-        const tasks = [];
+        visibleTasks = [];
         for (let i = 0; i < visibleRows.length; i++) {
             const row = visibleRows[i];
-            if ($rowTaskCache[row.model.id]) {
-                for (let j = 0; j < $rowTaskCache[row.model.id].length; j++) {
-                    const id = $rowTaskCache[row.model.id][j];
-                    tasks.push($taskStore.entities[id]);
+            if ($rowTaskCache.has(row.model.id)) {
+                for (let j = 0; j < $rowTaskCache.get(row.model.id).length; j++) {
+                    const id = $rowTaskCache.get(row.model.id)[j];
+                    visibleTasks.push($taskStore.entities[id]);
                 }
             }
         }
-        visibleTasks = tasks;
     }
 
+    //visibleTasks = $allTasks.filter(task => visibleRows.some(row => row.model.id === task.model.resourceId));
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -690,12 +692,11 @@
                     {/each}
 
                     {#each visibleTasks as task (task.model.id)}
-                    <Task model={task.model} left={task.left}
-                     width={task.width} height={task.height} top={task.top} {...task} />
+                    <Task model={task.model} left={task.left} width={task.width} height={task.height} top={task.top} {...task} />
                     {/each}
                 </div>
                 {#each ganttBodyModules as module}
-                <svelte:component this={module} {paddingTop} {paddingBottom} {visibleRows} {...$$restProps} on:init="{onModuleInit}" />
+                <svelte:component this={module} {paddingTop} {paddingBottom} {...$$restProps} on:init="{onModuleInit}" />
                 {/each}
             </div>
         </div>
@@ -711,11 +712,6 @@
     :global(.sg-view:not(:first-child)) {
         margin-left: 5px;
     }
-    
-    /* This class should take into account varying widths of the scroll bar
-    .right-scrollbar-visible {
-        padding-right: 17px;
-    } */
 
     .sg-timeline {
         flex: 1 1 0%;

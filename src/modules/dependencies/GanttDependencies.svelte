@@ -1,21 +1,21 @@
 <script lang="ts">
     import { getContext } from 'svelte';
-
-    import Dependency from './Dependency.svelte';
-    
+    import type { GanttContextDimensions } from '../../gantt'
     import { taskStore } from '../../core/store';
+    import Dependency from './Dependency.svelte';
 
-    const { visibleHeight } = getContext('dimensions');
+    const { visibleHeight } : GanttContextDimensions = getContext('dimensions');
 
     export let paddingTop;
     export let dependencies = [];
 
     let visibleDependencies = [];
+
     $: {
         const result = [];
+        const map = $taskStore.entities;
         for (let i = 0; i < dependencies.length; i++) {
             const dependency = dependencies[i];
-            const map = $taskStore.entities;
 
             const fromTask = map[dependency.fromId];
             const toTask = map[dependency.toId];
@@ -29,6 +29,7 @@
         }
         visibleDependencies = result;
     }
+
 </script>
 
 <div class="dependency-container">

@@ -10,7 +10,7 @@ interface EntityState<T> {
 }
 
 interface EntityType {
-    model: { id: number | string },
+    model: { id: string | number },
     hidden?: boolean
 }
 
@@ -52,15 +52,14 @@ function createEntityStore<T extends EntityType>(): EntityStore<T> {
         deleteAll: (ids: (number | string)[]) => update(state => {
             const entities = { ...state.entities };
             const idSet = new Set(ids);
+            const newIds = state.ids.filter(i => !idSet.has(i));
         
-            for (let i = 0; i < state.ids.length; i++) {
-                if (idSet.has(state.ids[i])) {
-                    delete entities[state.ids[i]];
-                }
+            for (let i = 0; i < ids.length; i++) {
+                delete entities[ids[i]];
             }
         
             return {
-                ids: state.ids.filter(i => !idSet.has(i)),
+                ids: newIds,
                 entities
             };
         }),
@@ -83,11 +82,10 @@ function createEntityStore<T extends EntityType>(): EntityStore<T> {
             }
         }),
         upsertAll: (items: T[]) => update(state => {
+            const ids = state.ids;
             const entities = { ...state.entities };
-            const ids = [...state.ids];
-
             for (let i = 0; i < items.length; i++) {
-                if (!ids.includes(items[i].model.id)) {
+                if (ids.indexOf(items[i].model.id) === -1) {
                     ids.push(items[i].model.id);
                 }
                 entities[items[i].model.id] = items[i];
@@ -122,16 +120,28 @@ export const allRows = all(rowStore);
 export const allTimeRanges = all(timeRangeStore);
 
 export const rowTaskCache = derived(allTasks, $allTasks => {
-    const cache = {};
+    const cache = new Map();
     for (let i = 0; i < $allTasks.length; i++) {
         const task = $allTasks[i];
-        if (!cache[task.model.resourceId]) {
-            cache[task.model.resourceId] = [];
+        if (!cache.has(task.model.resourceId)) {
+            cache.set(task.model.resourceId, []);
         }
-    cache[task.model.resourceId].push(task.model.id);
+        cache.get(task.model.resourceId).push(task.model.id);
     }
     return cache;
 });
+
+// export const rowTaskCache = derived(allTasks, $allTasks => {
+//     const cache = {};
+//     for (let i = 0; i < $allTasks.length; i++) {
+//         const task = $allTasks[i];
+//         if (!cache[task.model.resourceId]) {
+//             cache[task.model.resourceId] = [];
+//         }
+//     cache[task.model.resourceId].push(task.model.id);
+//     }
+//     return cache;
+// });
 
 export function all<T extends EntityType>(store: EntityStore<T>): Readable<T[]> {
     return derived(store, ({ ids, entities }) => {
@@ -143,14 +153,14 @@ export function all<T extends EntityType>(store: EntityStore<T>): Readable<T[]> 
     });
 }
 
-export function where<T extends EntityType>(store: EntityStore<T>, filterFn: (value: T) => any): Readable<T[]> {
-    return derived(store, ({ ids, entities }) => {
-        const results = [];
-        for (let i = 0; i < ids.length; i++) {
-            if (filterFn(entities[ids[i]])) {
-                results.push(entities[ids[i]]);
-            }
-        }
-        return results;
-    });
-}
+// export function where<T extends EntityType>(store: EntityStore<T>, filterFn: (value: T) => any): Readable<T[]> {
+//     return derived(store, ({ ids, entities }) => {
+//         const results = [];
+//         for (let i = 0; i < ids.length; i++) {
+//             if (filterFn(entities[ids[i]])) {
+//                 results.push(entities[ids[i]]);
+//             }
+//         }
+//         return results;
+//     });
+// }
